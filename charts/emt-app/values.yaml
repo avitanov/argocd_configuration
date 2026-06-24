@@ -1,0 +1,159 @@
+namespace:
+  create: true
+  name: emt-prod
+
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: aws-account-id.dkr.ecr.aws-region.amazonaws.com/emt-frontend
+    tag: set-by-ci
+    pullPolicy: IfNotPresent
+  containerPort: 8080
+  service:
+    type: ClusterIP
+    port: 80
+  config:
+    FRONTEND_CONTAINER_PORT: "8080"
+    VITE_API_BASE_URL: /api
+    BACKEND_INTERNAL_URL: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  podSecurityContext: {}
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    runAsNonRoot: true
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 20
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 5
+
+backend:
+  replicaCount: 1
+  image:
+    repository: aws-account-id.dkr.ecr.aws-region.amazonaws.com/emt-backend
+    tag: set-by-ci
+    pullPolicy: IfNotPresent
+  containerPort: 9091
+  service:
+    type: ClusterIP
+    port: 9091
+  config:
+    SERVER_PORT: "9091"
+    SPRING_APPLICATION_NAME: EMT Advanced
+    SPRING_JPA_HIBERNATE_DDL_AUTO: none
+    SPRING_JPA_HIBERNATE_SHOW_SQL: "false"
+    SPRING_JPA_SHOW_SQL: "false"
+    SPRING_JPA_FORMAT_SQL: "false"
+    APP_CORS_ALLOWED_ORIGINS: https://app.example.com
+    APP_CORS_ALLOWED_METHODS: GET,POST,PUT,PATCH,DELETE,OPTIONS
+    APP_CORS_ALLOWED_HEADERS: "*"
+    SIMILAR_PRODUCTS_PRICE_WINDOW: "3000"
+    GEMINI_MODEL: gemini-2.0-flash-001
+  secret:
+    create: true
+    existingSecret: ""
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql-ha-pgpool:5432/products?useUnicode=true&characterEncoding=UTF-8&serverTimezone=CET
+    SPRING_DATASOURCE_USERNAME: products
+    SPRING_DATASOURCE_PASSWORD: change-me
+    GEMINI_API_KEY: ""
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  podSecurityContext: {}
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    runAsNonRoot: true
+  readinessProbe:
+    httpGet:
+      path: /api/products/frizideri
+      port: http
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  livenessProbe:
+    httpGet:
+      path: /api/products/frizideri
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 6
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: emt.example.com
+  tls: []
+  frontend:
+    path: /
+    pathType: Prefix
+  backend:
+    path: /api
+    pathType: Prefix
+
+postgresql-ha:
+  enabled: true
+  fullnameOverride: postgresql-ha
+  global:
+    defaultStorageClass: ""
+    postgresql:
+      database: products
+      username: products
+      password: change-me
+      repmgrUsername: repmgr
+      repmgrPassword: change-me-repmgr
+  postgresql:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    persistence:
+      enabled: true
+      size: 8Gi
+  pgpool:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi

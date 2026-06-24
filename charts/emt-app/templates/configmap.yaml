@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "emt-app.backendConfigMapName" . }}
+  namespace: {{ include "emt-app.namespace" . }}
+  labels:
+    {{- include "emt-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+data:
+  SERVER_PORT: {{ .Values.backend.config.SERVER_PORT | quote }}
+  SPRING_APPLICATION_NAME: {{ .Values.backend.config.SPRING_APPLICATION_NAME | quote }}
+  SPRING_JPA_HIBERNATE_DDL_AUTO: {{ .Values.backend.config.SPRING_JPA_HIBERNATE_DDL_AUTO | quote }}
+  SPRING_JPA_HIBERNATE_SHOW_SQL: {{ .Values.backend.config.SPRING_JPA_HIBERNATE_SHOW_SQL | quote }}
+  SPRING_JPA_SHOW_SQL: {{ .Values.backend.config.SPRING_JPA_SHOW_SQL | quote }}
+  SPRING_JPA_FORMAT_SQL: {{ .Values.backend.config.SPRING_JPA_FORMAT_SQL | quote }}
+  APP_CORS_ALLOWED_ORIGINS: {{ .Values.backend.config.APP_CORS_ALLOWED_ORIGINS | quote }}
+  APP_CORS_ALLOWED_METHODS: {{ .Values.backend.config.APP_CORS_ALLOWED_METHODS | quote }}
+  APP_CORS_ALLOWED_HEADERS: {{ .Values.backend.config.APP_CORS_ALLOWED_HEADERS | quote }}
+  SIMILAR_PRODUCTS_PRICE_WINDOW: {{ .Values.backend.config.SIMILAR_PRODUCTS_PRICE_WINDOW | quote }}
+  GEMINI_MODEL: {{ .Values.backend.config.GEMINI_MODEL | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "emt-app.frontendConfigMapName" . }}
+  namespace: {{ include "emt-app.namespace" . }}
+  labels:
+    {{- include "emt-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+data:
+  FRONTEND_CONTAINER_PORT: {{ .Values.frontend.config.FRONTEND_CONTAINER_PORT | quote }}
+  VITE_API_BASE_URL: {{ .Values.frontend.config.VITE_API_BASE_URL | quote }}
+  BACKEND_INTERNAL_URL: {{ include "emt-app.frontendBackendInternalUrl" . | quote }}

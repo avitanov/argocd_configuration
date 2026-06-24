@@ -1,0 +1,80 @@
+namespace:
+  create: true
+  name: emt-prod
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: aws-account-id.dkr.ecr.aws-region.amazonaws.com/emt-frontend
+    tag: set-by-ci
+  config:
+    VITE_API_BASE_URL: /api
+  resources:
+    requests:
+      cpu: 150m
+      memory: 192Mi
+    limits:
+      cpu: 300m
+      memory: 384Mi
+
+backend:
+  replicaCount: 2
+  image:
+    repository: aws-account-id.dkr.ecr.aws-region.amazonaws.com/emt-backend
+    tag: set-by-ci
+  config:
+    APP_CORS_ALLOWED_ORIGINS: https://emt.example.com
+  secret:
+    create: true
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql-ha-pgpool:5432/products?useUnicode=true&characterEncoding=UTF-8&serverTimezone=CET
+    SPRING_DATASOURCE_USERNAME: products
+    SPRING_DATASOURCE_PASSWORD: replace-me
+    GEMINI_API_KEY: replace-me
+  resources:
+    requests:
+      cpu: 250m
+      memory: 384Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /api/products/frizideri
+  host: emt.example.com
+
+postgresql-ha:
+  enabled: true
+  global:
+    defaultStorageClass: gp3
+    postgresql:
+      database: products
+      username: products
+      password: replace-me
+      repmgrUsername: repmgr
+      repmgrPassword: replace-me-repmgr
+  postgresql:
+    replicaCount: 3
+    persistence:
+      size: 20Gi
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+  pgpool:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 150m
+        memory: 192Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi

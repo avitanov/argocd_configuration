@@ -1,0 +1,12 @@
+1. Frontend service:
+   http://{{ include "emt-app.frontendServiceName" . }}.{{ include "emt-app.namespace" . }}.svc.cluster.local
+
+2. Backend service:
+   http://{{ include "emt-app.backendServiceName" . }}.{{ include "emt-app.namespace" . }}.svc.cluster.local:{{ .Values.backend.service.port }}
+
+3. If Ingress is enabled, set DNS for:
+   {{ .Values.ingress.host }}
+
+4. Replace placeholder backend secret values before production deployment or set:
+   backend.secret.create=false
+   backend.secret.existingSecret=<existing-secret-name>
