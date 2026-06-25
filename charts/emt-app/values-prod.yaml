@@ -1,7 +1,6 @@
 namespace:
   create: true
   name: emt-prod
-
 secrets:
   existingSecret: emt-app-secrets
   create: false
@@ -50,12 +49,11 @@ secrets:
         remoteRef:
           key: emt/prod/database
           property: sr-check-password
-
 frontend:
   replicaCount: 2
   image:
-    repository: aws-account-id.dkr.ecr.aws-region.amazonaws.com/emt-frontend
-    tag: set-by-ci
+    repository: 004619892251.dkr.ecr.eu-central-1.amazonaws.com/emt-frontend
+    tag: 775ffd65d98d68f809b0bf188544611ffb378da0
   resources:
     requests:
       cpu: 150m
@@ -63,7 +61,6 @@ frontend:
     limits:
       cpu: 300m
       memory: 384Mi
-
 backend:
   replicaCount: 2
   image:
@@ -86,7 +83,6 @@ ingress:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
   host: emt.example.com
-
 postgresql-ha:
   global:
     defaultStorageClass: gp3
