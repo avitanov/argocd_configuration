@@ -56,9 +56,9 @@ app.kubernetes.io/component: {{ .component }}
 {{- printf "%s-frontend-config" (include "emt-app.fullname" .) -}}
 {{- end -}}
 
-{{- define "emt-app.backendSecretName" -}}
-{{- if .Values.backend.secret.existingSecret -}}
-{{- .Values.backend.secret.existingSecret -}}
+{{- define "emt-app.secretName" -}}
+{{- if .Values.secrets.existingSecret -}}
+{{- .Values.secrets.existingSecret -}}
 {{- else -}}
 {{- printf "%s-backend-secret" (include "emt-app.fullname" .) -}}
 {{- end -}}

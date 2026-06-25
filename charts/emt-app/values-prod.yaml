@@ -2,11 +2,60 @@ namespace:
   create: true
   name: emt-prod
 
+secrets:
+  existingSecret: emt-app-secrets
+  create: false
+  externalSecret:
+    enabled: true
+    name: emt-app-secrets
+    refreshInterval: 1h
+    secretStoreRef:
+      name: aws-secrets-manager
+      kind: ClusterSecretStore
+    creationPolicy: Owner
+    data:
+      - secretKey: SPRING_DATASOURCE_URL
+        remoteRef:
+          key: emt/prod/app
+          property: SPRING_DATASOURCE_URL
+      - secretKey: SPRING_DATASOURCE_USERNAME
+        remoteRef:
+          key: emt/prod/app
+          property: SPRING_DATASOURCE_USERNAME
+      - secretKey: SPRING_DATASOURCE_PASSWORD
+        remoteRef:
+          key: emt/prod/app
+          property: SPRING_DATASOURCE_PASSWORD
+      - secretKey: GEMINI_API_KEY
+        remoteRef:
+          key: emt/prod/app
+          property: GEMINI_API_KEY
+      - secretKey: password
+        remoteRef:
+          key: emt/prod/database
+          property: password
+      - secretKey: postgres-password
+        remoteRef:
+          key: emt/prod/database
+          property: postgres-password
+      - secretKey: repmgr-password
+        remoteRef:
+          key: emt/prod/database
+          property: repmgr-password
+      - secretKey: admin-password
+        remoteRef:
+          key: emt/prod/database
+          property: admin-password
+      - secretKey: sr-check-password
+        remoteRef:
+          key: emt/prod/database
+          property: sr-check-password
+
 frontend:
   replicaCount: 2
   image:
     repository: aws-account-id.dkr.ecr.aws-region.amazonaws.com/emt-frontend
-    tag: prod
+    tag: set-by-ci
   resources:
     requests:
       cpu: 150m
@@ -19,7 +68,7 @@ backend:
   replicaCount: 2
   image:
     repository: aws-account-id.dkr.ecr.aws-region.amazonaws.com/emt-backend
-    tag: prod
+    tag: set-by-ci
   config:
     APP_CORS_ALLOWED_ORIGINS: https://emt.example.com
   resources:
@@ -29,12 +78,6 @@ backend:
     limits:
       cpu: 750m
       memory: 768Mi
-  secret:
-    SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql-ha-pgpool:5432/products?useUnicode=true&characterEncoding=UTF-8&serverTimezone=CET
-    SPRING_DATASOURCE_USERNAME: products
-    SPRING_DATASOURCE_PASSWORD: replace-me
-    GEMINI_API_KEY: replace-me
-
 ingress:
   enabled: true
   className: alb
@@ -50,9 +93,15 @@ postgresql-ha:
     postgresql:
       database: products
       username: products
-      password: replace-me
+      existingSecret: emt-app-secrets
       repmgrUsername: repmgr
-      repmgrPassword: replace-me-repmgr
+      repmgrPassword: ""
+    pgpool:
+      existingSecret: emt-app-secrets
+      adminUsername: admin
+      adminPassword: ""
+      srCheckUsername: repmgr
+      srCheckPassword: ""
   postgresql:
     replicaCount: 3
     persistence:

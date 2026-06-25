@@ -12,8 +12,7 @@ spec:
     helm:
       releaseName: emt-app
       valueFiles:
-        - values.yaml
-        - ../../environments/prod/values.yaml
+        - values-prod.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: emt-prod

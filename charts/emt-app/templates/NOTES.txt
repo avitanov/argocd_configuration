@@ -7,6 +7,6 @@
 3. If Ingress is enabled, set DNS for:
    {{ .Values.ingress.host }}
 
-4. Replace placeholder backend secret values before production deployment or set:
-   backend.secret.create=false
-   backend.secret.existingSecret=<existing-secret-name>
+4. Secrets strategy:
+   - local K3D: create {{ include "emt-app.secretName" . }} manually before installing the chart
+   - AWS EKS: enable External Secrets and keep real values in AWS Secrets Manager

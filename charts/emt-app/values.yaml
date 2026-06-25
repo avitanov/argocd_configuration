@@ -7,6 +7,20 @@ fullnameOverride: ""
 
 imagePullSecrets: []
 
+secrets:
+  existingSecret: emt-app-secrets
+  create: false
+  values: {}
+  externalSecret:
+    enabled: false
+    name: emt-app-secrets
+    refreshInterval: 1h
+    secretStoreRef:
+      name: aws-secrets-manager
+      kind: ClusterSecretStore
+    creationPolicy: Owner
+    data: []
+
 frontend:
   replicaCount: 1
   image:
@@ -74,13 +88,6 @@ backend:
     APP_CORS_ALLOWED_HEADERS: "*"
     SIMILAR_PRODUCTS_PRICE_WINDOW: "3000"
     GEMINI_MODEL: gemini-2.0-flash-001
-  secret:
-    create: true
-    existingSecret: ""
-    SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql-ha-pgpool:5432/products?useUnicode=true&characterEncoding=UTF-8&serverTimezone=CET
-    SPRING_DATASOURCE_USERNAME: products
-    SPRING_DATASOURCE_PASSWORD: change-me
-    GEMINI_API_KEY: ""
   resources:
     requests:
       cpu: 200m
@@ -133,9 +140,15 @@ postgresql-ha:
     postgresql:
       database: products
       username: products
-      password: change-me
+      existingSecret: emt-app-secrets
       repmgrUsername: repmgr
-      repmgrPassword: change-me-repmgr
+      repmgrPassword: ""
+    pgpool:
+      existingSecret: emt-app-secrets
+      adminUsername: admin
+      adminPassword: ""
+      srCheckUsername: repmgr
+      srCheckPassword: ""
   postgresql:
     replicaCount: 2
     resources:
