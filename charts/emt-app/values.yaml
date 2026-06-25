@@ -20,8 +20,8 @@ secrets:
 frontend:
   replicaCount: 1
   image:
-    repository: aws-account-id.dkr.ecr.aws-region.amazonaws.com/emt-frontend
-    tag: set-by-ci
+    repository: 004619892251.dkr.ecr.eu-central-1.amazonaws.com/emt-frontend
+    tag: 775ffd65d98d68f809b0bf188544611ffb378da0
     pullPolicy: IfNotPresent
   containerPort: 8080
   service:
