@@ -64,8 +64,8 @@ frontend:
 backend:
   replicaCount: 2
   image:
-    repository: aws-account-id.dkr.ecr.aws-region.amazonaws.com/emt-backend
-    tag: set-by-ci
+    repository: 004619892251.dkr.ecr.eu-central-1.amazonaws.com/emt-backend
+    tag: 775ffd65d98d68f809b0bf188544611ffb378da0
   config:
     APP_CORS_ALLOWED_ORIGINS: https://emt.example.com
   resources:
