@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: emt-project
+  namespace: argocd
+spec:
+  description: GitOps project for the EMT application stack.
+  sourceRepos:
+    - https://github.com/your-org/ARGOCD_CONFIGURATION.git
+  destinations:
+    - namespace: emt-dev
+      server: https://kubernetes.default.svc
+    - namespace: emt-prod
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  orphanedResources:
+    warn: true

@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: emt-app
+  namespace: argocd
+spec:
+  project: emt-project
+  source:
+    repoURL: https://github.com/your-org/ARGOCD_CONFIGURATION.git
+    targetRevision: main
+    path: charts/emt-app
+    helm:
+      releaseName: emt-app
+      valueFiles:
+        - values.yaml
+        - ../../environments/prod/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: emt-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - ApplyOutOfSyncOnly=true
