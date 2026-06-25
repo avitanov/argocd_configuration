@@ -6,7 +6,7 @@ metadata:
 spec:
   project: emt-project
   source:
-    repoURL: https://github.com/your-org/ARGOCD_CONFIGURATION.git
+    repoURL: https://github.com/avitanov/argocd_configuration.git
     targetRevision: main
     path: charts/emt-app
     helm:
