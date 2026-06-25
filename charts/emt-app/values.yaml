@@ -1,12 +1,9 @@
 namespace:
   create: true
   name: emt-prod
-
 nameOverride: ""
 fullnameOverride: ""
-
 imagePullSecrets: []
-
 secrets:
   existingSecret: emt-app-secrets
   create: false
@@ -20,7 +17,6 @@ secrets:
       kind: ClusterSecretStore
     creationPolicy: Owner
     data: []
-
 frontend:
   replicaCount: 1
   image:
@@ -65,12 +61,11 @@ frontend:
     periodSeconds: 20
     timeoutSeconds: 5
     failureThreshold: 5
-
 backend:
   replicaCount: 1
   image:
-    repository: aws-account-id.dkr.ecr.aws-region.amazonaws.com/emt-backend
-    tag: set-by-ci
+    repository: 004619892251.dkr.ecr.eu-central-1.amazonaws.com/emt-backend
+    tag: 775ffd65d98d68f809b0bf188544611ffb378da0
     pullPolicy: IfNotPresent
   containerPort: 9091
   service:
@@ -118,7 +113,6 @@ backend:
     periodSeconds: 20
     timeoutSeconds: 5
     failureThreshold: 6
-
 ingress:
   enabled: false
   className: ""
@@ -131,7 +125,6 @@ ingress:
   backend:
     path: /api
     pathType: Prefix
-
 postgresql-ha:
   enabled: true
   fullnameOverride: postgresql-ha
