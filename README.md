@@ -36,6 +36,13 @@ ARGOCD_CONFIGURATION/
     └── university-demo-checklist.md
 ```
 
+## Primary Guides
+
+If you only need the two main runbooks, start here:
+
+- local Kubernetes with K3D: [docs/local-k3d-setup.md](./docs/local-k3d-setup.md)
+- AWS deployment with EKS, ECR, Argo CD, and Secrets Manager: [docs/aws-setup.md](./docs/aws-setup.md)
+
 ## Chart Usage
 
 Base values live in:
