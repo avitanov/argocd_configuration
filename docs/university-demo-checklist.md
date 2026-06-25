@@ -47,4 +47,4 @@ Use this checklist before the demo.
 - [ ] frontend is reachable through Ingress
 - [ ] backend answers through `/api`
 - [ ] database is healthy
-- [ ] image tags in `environments/prod/values.yaml` match the latest deployed build
+- [ ] image tags in `charts/emt-app/values-prod.yaml` match the latest deployed build

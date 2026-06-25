@@ -30,7 +30,10 @@ Before applying, replace:
 - `https://github.com/your-org/ARGOCD_CONFIGURATION.git`
 - placeholder domain names
 - placeholder image repositories if needed
-- placeholder secrets in environment values or move them to an existing secret flow
+- External Secrets store names and remote secret references in `charts/emt-app/values-prod.yaml`
+
+Do not put real secrets in `values-prod.yaml`.
+For AWS EKS, keep real values in AWS Secrets Manager and sync them through External Secrets Operator.
 
 ## Sync Behavior
 
@@ -48,3 +51,11 @@ The chart deploys into:
 - `emt-prod` by default
 
 The namespace is also defined in the Helm chart values.
+
+## Production Values File
+
+The Argo CD application points to:
+
+- `charts/emt-app/values-prod.yaml`
+
+That file is the production overlay GitHub Actions should update with new image tags.

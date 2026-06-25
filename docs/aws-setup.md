@@ -27,6 +27,7 @@ Use short-lived credentials wherever possible:
 4. EKS node group role
 5. IAM role for the AWS Load Balancer Controller
 6. IAM role for the EBS CSI driver if your setup requires it
+7. IAM access path for AWS Secrets Manager through External Secrets Operator
 
 ## Region and Naming
 
@@ -44,3 +45,4 @@ Make sure these are decided:
 - VPC and subnets for EKS
 - public host name for Ingress
 - certificate strategy if you want HTTPS
+- how the cluster will read secrets from AWS Secrets Manager

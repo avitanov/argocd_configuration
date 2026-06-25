@@ -15,7 +15,7 @@ Backend/frontend images are built
 Images are pushed to Amazon ECR
         |
         v
-GitHub Actions updates environments/prod/values.yaml in ARGOCD_CONFIGURATION
+GitHub Actions updates charts/emt-app/values-prod.yaml in ARGOCD_CONFIGURATION
         |
         v
 Argo CD detects the Git change
@@ -37,5 +37,5 @@ This repository is the source of truth for desired Kubernetes state.
 
 - `EMT_2025/.github/workflows/backend-ci.yml`
 - `EMT_2025/.github/workflows/frontend-ci.yml`
-- `ARGOCD_CONFIGURATION/environments/prod/values.yaml`
+- `ARGOCD_CONFIGURATION/charts/emt-app/values-prod.yaml`
 - `ARGOCD_CONFIGURATION/argocd/applications/emt-app.yaml`
