@@ -31,23 +31,23 @@ secrets:
           property: GEMINI_API_KEY
       - secretKey: password
         remoteRef:
-          key: emt/prod/database
+          key: emt/prod/app
           property: password
       - secretKey: postgres-password
         remoteRef:
-          key: emt/prod/database
+          key: emt/prod/app
           property: postgres-password
       - secretKey: repmgr-password
         remoteRef:
-          key: emt/prod/database
+          key: emt/prod/app
           property: repmgr-password
       - secretKey: admin-password
         remoteRef:
-          key: emt/prod/database
+          key: emt/prod/app
           property: admin-password
       - secretKey: sr-check-password
         remoteRef:
-          key: emt/prod/database
+          key: emt/prod/app
           property: sr-check-password
 frontend:
   replicaCount: 2
