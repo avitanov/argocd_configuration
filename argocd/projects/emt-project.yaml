@@ -8,8 +8,6 @@ spec:
   sourceRepos:
     - https://github.com/avitanov/argocd_configuration.git
   destinations:
-    - namespace: emt-dev
-      server: https://kubernetes.default.svc
     - namespace: emt-prod
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
