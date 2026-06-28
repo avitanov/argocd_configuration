@@ -65,7 +65,7 @@ backend:
   replicaCount: 2
   image:
     repository: 004619892251.dkr.ecr.eu-central-1.amazonaws.com/emt-backend
-    tag: 12d453405301059e2f71a44448ba2e9a50309180
+    tag: 4a6c23f0eea7b5fb2321d11004ee58b049ffbbbc
   config:
     APP_CORS_ALLOWED_ORIGINS: "*"
   resources:
@@ -81,7 +81,7 @@ databaseSeeder:
   truncateBeforeLoad: false
   image:
     repository: 004619892251.dkr.ecr.eu-central-1.amazonaws.com/emt-db-seeder
-    tag: 12d453405301059e2f71a44448ba2e9a50309180
+    tag: 3750a9454e2365c44d11efd076f8d62268e330fe
     pullPolicy: IfNotPresent
 ingress:
   enabled: true
