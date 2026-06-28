@@ -81,7 +81,7 @@ databaseSeeder:
   truncateBeforeLoad: false
   image:
     repository: 004619892251.dkr.ecr.eu-central-1.amazonaws.com/emt-db-seeder
-    tag: 12d453405301059e2f71a44448ba2e9a50309180
+    tag: 3750a9454e2365c44d11efd076f8d62268e330fe
     pullPolicy: IfNotPresent
 ingress:
   enabled: true
