@@ -1,4 +1,4 @@
 local-secrets/*.env
 Chart.lock
-charts/*
-!charts/.gitkeep
+charts/**/charts/*
+!charts/**/charts/.gitkeep

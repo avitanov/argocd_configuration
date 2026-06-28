@@ -1,181 +1,222 @@
-# AWS Deployment Runbook
+# AWS EKS Setup and Deployment
 
-Use this document when you want to deploy the full stack to AWS with:
+This guide deploys the application to AWS with:
 
-- Amazon ECR for images
-- Amazon EKS for Kubernetes
-- AWS Load Balancer Controller for Ingress
-- AWS Secrets Manager plus External Secrets Operator for secrets
-- Argo CD for GitOps deployment
+- Amazon ECR
+- Amazon EKS
+- AWS Load Balancer Controller
+- Amazon EBS CSI driver
+- AWS Secrets Manager
+- External Secrets Operator
+- Argo CD
+- Helm
 
-This is the production-style flow for the project.
+Use this after Docker Compose, CI, ECR image publishing, and local Helm rendering already work.
 
 ## Prerequisites
 
-Prepare these first:
+Install locally:
 
-- one AWS account for the demo
-- AWS CLI configured locally
+- AWS CLI
 - `kubectl`
 - `helm`
-- access to the GitHub repositories
-- an IAM identity with permission to create ECR, EKS, IAM roles, networking, and add-ons
-- a public DNS name if you want a real internet-facing hostname
 
-You also need both repositories ready:
+You also need:
 
-- `EMT_2025` for CI, Docker images, and image publishing
-- `ARGOCD_CONFIGURATION` for Helm and Argo CD deployment state
+- AWS account access for the demo
+- permission to create ECR, EKS, IAM roles, load balancers, and EBS volumes
+- access to the `EMT_2025` and `ARGOCD_CONFIGURATION` GitHub repositories
+- a DNS name if you want a real hostname instead of only the ALB DNS name
 
-## 1. Decide the AWS Baseline
-
-Before building anything, decide:
-
-- AWS region
-- cluster name
-- VPC and subnet layout
-- public hostname
-- certificate strategy if you want HTTPS
-- whether you will use a `ClusterSecretStore` or `SecretStore` for External Secrets
-
-Recommended naming:
+Recommended demo names:
 
 - EKS cluster: `emt-eks`
-- ECR repositories: `emt-backend`, `emt-frontend`
 - namespace: `emt-prod`
+- ECR repositories: `emt-backend`, `emt-frontend`, `emt-db-seeder`
+- AWS Secrets Manager secrets: `emt/prod/app`, `emt/prod/database`
+- External Secrets store: `aws-secrets-manager`
 
-## 2. Prepare IAM the Right Way
-
-Use short-lived credentials wherever possible.
-
-Recommended model:
-
-- GitHub Actions assumes an AWS role through OIDC
-- cluster add-ons use IAM roles where required
-- no long-lived AWS access keys in GitHub
-
-Minimum IAM topics to prepare:
-
-1. GitHub OIDC provider
-2. GitHub Actions role for ECR push
-3. EKS cluster role
-4. EKS node group role
-5. IAM role for the AWS Load Balancer Controller
-6. IAM role for the EBS CSI driver
-7. IAM access path for AWS Secrets Manager through External Secrets Operator
-
-## 3. Create the ECR Repositories
+## 1. Create ECR Repositories
 
 ```bash
 aws ecr create-repository --repository-name emt-backend
 aws ecr create-repository --repository-name emt-frontend
+aws ecr create-repository --repository-name emt-db-seeder
 ```
 
 Recommended settings:
 
 - immutable image tags
 - image scanning enabled
-- lifecycle policies for cleanup
+- lifecycle policy to remove old images
 
-See also:
+Example lifecycle policy:
 
-- [ecr-setup.md](./ecr-setup.md)
+```json
+{
+  "rules": [
+    {
+      "rulePriority": 1,
+      "description": "Expire old images",
+      "selection": {
+        "tagStatus": "any",
+        "countType": "imageCountMoreThan",
+        "countNumber": 50
+      },
+      "action": {
+        "type": "expire"
+      }
+    }
+  ]
+}
+```
 
-## 4. Configure GitHub Actions in EMT_2025
+Apply it to each repository:
 
-Set the required GitHub variables for the CI workflows in `EMT_2025`:
+```bash
+aws ecr put-lifecycle-policy \
+  --repository-name emt-backend \
+  --lifecycle-policy-text file://policy.json
+```
+
+## 2. Configure GitHub Actions
+
+In the `EMT_2025` GitHub repository, configure these variables:
 
 - `AWS_REGION`
 - `AWS_ROLE_TO_ASSUME`
 - `ECR_BACKEND_REPOSITORY`
 - `ECR_FRONTEND_REPOSITORY`
+- `ECR_DB_SEEDER_REPOSITORY`
 - `GITOPS_REPOSITORY`
 - `GITOPS_BRANCH`
 - `GITOPS_BACKEND_VALUES_FILE`
 - `GITOPS_FRONTEND_VALUES_FILE`
+- `GITOPS_DB_SEEDER_VALUES_FILE`
 
-The production GitOps target in this repository is:
+The GitOps values file should normally be:
 
-- `charts/emt-app/values-prod.yaml`
+```text
+charts/emt-app/values-prod.yaml
+```
 
-That is the file CI should update with new image tags.
+Configure this GitHub secret:
+
+- `GITOPS_REPO_TOKEN`
+
+Use AWS OIDC for AWS access. Do not store long-lived AWS access keys in GitHub.
+
+## 3. Push Images to ECR
+
+The application repo has separate workflows for:
+
+- backend image
+- frontend image
+- database seeder image
+
+On pushes to the main branch, the workflows build images, push them to ECR with the Git SHA tag, and update `ARGOCD_CONFIGURATION/charts/emt-app/values-prod.yaml`.
+
+Confirm `values-prod.yaml` contains current ECR repositories and tags for:
+
+- `backend.image`
+- `frontend.image`
+- `databaseSeeder.image`
+
+## 4. Create Production Secrets in AWS Secrets Manager
+
+Create `emt/prod/app` with:
+
+```text
+SPRING_DATASOURCE_URL
+SPRING_DATASOURCE_USERNAME
+SPRING_DATASOURCE_PASSWORD
+GEMINI_API_KEY
+```
+
+`SPRING_DATASOURCE_URL` should point to the Pgpool service:
+
+```text
+jdbc:postgresql://postgresql-ha-pgpool:5432/products?useUnicode=true&characterEncoding=UTF-8&serverTimezone=CET
+```
+
+Create `emt/prod/database` with:
+
+```text
+password
+postgres-password
+repmgr-password
+admin-password
+sr-check-password
+```
+
+Do not put real secret values in Git, Helm values, documentation, or GitHub Actions logs.
 
 ## 5. Create the EKS Cluster
 
-Do not create EKS before the application images, CI workflows, and Helm chart are ready.
-
-Cluster checklist:
+Create a small student-budget EKS cluster:
 
 - one EKS cluster
-- at least one managed node group
+- one low-cost managed node group
 - private subnets for worker nodes
-- public subnets for the ALB if the application is internet-facing
+- public subnets for the ALB if the application is public
+- small instance types appropriate for a university demo
 
-Required add-ons before the first application sync:
+Install required add-ons before deploying the app:
 
 1. Amazon EBS CSI driver
 2. AWS Load Balancer Controller
 3. metrics-server
-4. Argo CD
-5. External Secrets Operator
+4. External Secrets Operator
+5. Argo CD
 
-See also:
+The chart expects EBS-backed dynamic provisioning for PostgreSQL HA PVCs. `values-prod.yaml` defaults to `gp3`.
 
-- [eks-setup.md](./eks-setup.md)
+## 6. Configure External Secrets
 
-## 6. Prepare AWS Secrets Manager
+Create a `ClusterSecretStore` named:
 
-Production and demo secrets must not live in Git.
+```text
+aws-secrets-manager
+```
 
-Create the application and database secrets in AWS Secrets Manager so the chart can map them into the Kubernetes Secret `emt-app-secrets`.
-
-Expected remote secrets:
+It must allow External Secrets Operator to read:
 
 - `emt/prod/app`
 - `emt/prod/database`
 
-Expected properties:
+If you choose a different store name or secret path, update `charts/emt-app/values-prod.yaml`.
 
-- `SPRING_DATASOURCE_URL`
-- `SPRING_DATASOURCE_USERNAME`
-- `SPRING_DATASOURCE_PASSWORD`
-- `GEMINI_API_KEY`
-- `password`
-- `postgres-password`
-- `repmgr-password`
-- `admin-password`
-- `sr-check-password`
+## 7. Review Production Values
 
-`SPRING_DATASOURCE_URL` should point to the PostgreSQL HA Pgpool service, not a specific PostgreSQL pod.
+Before deploying, review:
 
-See also:
+```text
+charts/emt-app/values.yaml
+charts/emt-app/values-prod.yaml
+```
 
-- [aws-secrets-manager.md](./aws-secrets-manager.md)
+Check:
 
-## 7. Review Production Helm Values
+- namespace is `emt-prod`
+- image repositories point to ECR
+- image tags are immutable Git SHA tags
+- ingress class is `alb`
+- ALB annotations are correct
+- `secrets.externalSecret.enabled` is `true`
+- `databaseSeeder.enabled` is `true`
+- PostgreSQL HA uses small demo-friendly resources
 
-Before Argo CD syncs anything, review:
-
-- `charts/emt-app/values.yaml`
-- `charts/emt-app/values-prod.yaml`
-
-Update placeholders such as:
-
-- ECR repository URLs
-- ingress host name
-- External Secrets store name
-- remote secret keys and property names if your AWS layout differs
-
-Do not put real secret values into `values-prod.yaml`.
-
-## 8. Validate the Helm Chart
+## 8. Validate Helm
 
 From `ARGOCD_CONFIGURATION`:
 
 ```bash
 helm dependency update charts/emt-app
 helm lint charts/emt-app
-helm template emt-app charts/emt-app -f charts/emt-app/values-prod.yaml
+
+helm template emt-app charts/emt-app \
+  --namespace emt-prod \
+  -f charts/emt-app/values-prod.yaml
 ```
 
 ## 9. Install Argo CD
@@ -187,61 +228,96 @@ kubectl create namespace argocd
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 ```
 
-See also:
+Do not commit Argo CD admin passwords or kubeconfig files.
 
-- [argocd-setup.md](./argocd-setup.md)
+## 10. Configure Argo CD Manifests
 
-## 10. Point Argo CD at This Repository
+Review and update:
 
-Before applying the manifests, replace placeholders in:
+```text
+argocd/projects/emt-project.yaml
+argocd/applications/emt-app.yaml
+```
 
-- `argocd/projects/emt-project.yaml`
-- `argocd/applications/emt-app.yaml`
+Check:
 
-Important values to review:
-
-- Git repo URL
+- Git repository URL
 - target branch
-- destination namespace
-- production host name
+- chart path: `charts/emt-app`
+- values file: `values-prod.yaml`
+- destination namespace: `emt-prod`
+- destination cluster
 
-Then apply:
+Apply:
 
 ```bash
 kubectl apply -f argocd/projects/emt-project.yaml
 kubectl apply -f argocd/applications/emt-app.yaml
 ```
 
-## 11. Validate the EKS Deployment
-
-Check:
+## 11. Verify the AWS Deployment
 
 ```bash
 kubectl get pods -n emt-prod
 kubectl get svc -n emt-prod
 kubectl get ingress -n emt-prod
+kubectl get pvc -n emt-prod
 kubectl get externalsecret -n emt-prod
 kubectl get secret -n emt-prod
+kubectl get jobs -n emt-prod
 ```
 
-Also confirm:
+Check the seeder Job:
 
-- worker nodes are `Ready`
-- ALB controller pods are healthy
-- EBS CSI driver is healthy
-- Argo CD application sync is healthy
-- External Secrets successfully created `emt-app-secrets`
+```bash
+kubectl logs job/$(kubectl get jobs -n emt-prod \
+  -l app.kubernetes.io/component=db-seeder \
+  -o jsonpath='{.items[0].metadata.name}') -n emt-prod
+```
 
-## 12. Production Routing Model
+Check application logs:
 
-This repository expects:
+```bash
+kubectl logs deployment/emt-app-backend -n emt-prod
+kubectl logs deployment/emt-app-frontend -n emt-prod
+```
 
-- `/` to the frontend
-- `/api` to the backend
-- PostgreSQL to remain internal only
+Check Argo CD:
 
-Production uses AWS Load Balancer Controller with ALB-oriented ingress settings from `values-prod.yaml`.
+- application is synced
+- application is healthy
+- no ExternalSecret errors
+- ALB Ingress receives an address
 
-See also:
+## 12. Test the Application
 
-- [ingress-setup.md](./ingress-setup.md)
+Get the Ingress:
+
+```bash
+kubectl get ingress -n emt-prod
+```
+
+Open the configured host or ALB DNS name.
+
+Routing:
+
+- `/` goes to frontend
+- `/api` goes to backend
+- PostgreSQL is internal only
+
+## 13. Demo Checklist
+
+Before presenting, verify:
+
+- public Git repositories are available
+- backend, frontend, and seeder images exist in ECR
+- GitHub Actions update only `values-prod.yaml`
+- Argo CD syncs from `ARGOCD_CONFIGURATION`
+- frontend and backend Deployments are healthy
+- Services exist
+- Ingress exists and routes correctly
+- PostgreSQL HA chart created StatefulSets and PVCs
+- database seeder Job completed
+- backend can read seeded product data
+- secrets are coming from AWS Secrets Manager through External Secrets
+- resources run in `emt-prod`, not `default`

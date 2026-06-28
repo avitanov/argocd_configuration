@@ -71,3 +71,8 @@ app.kubernetes.io/component: {{ .component }}
 {{- printf "http://%s:%v" (include "emt-app.backendServiceName" .) .Values.backend.service.port -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "emt-app.dbSeederJobName" -}}
+{{- $imageRef := printf "%s:%s:%s" .Values.databaseSeeder.image.repository .Values.databaseSeeder.image.tag .Values.databaseSeeder.seedVersion -}}
+{{- printf "%s-db-seeder-%s" (include "emt-app.fullname" .) (sha256sum $imageRef | trunc 10) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}

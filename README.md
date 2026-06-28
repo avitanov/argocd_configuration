@@ -7,7 +7,7 @@ It contains:
 - the Helm chart for the application
 - chart-level environment overlays for local and production
 - Argo CD project and application manifests
-- documentation for AWS, ECR, EKS, Argo CD, and the deployment flow
+- documentation for local K3D and AWS EKS deployment
 
 Application source code, Dockerfiles, Docker Compose, and GitHub Actions stay in `../EMT_2025`.
 
@@ -25,23 +25,19 @@ ARGOCD_CONFIGURATION/
 │   └── emt-app/
 └── docs/
     ├── local-k3d-setup.md
-    ├── local-secrets.md
     ├── aws-setup.md
-    ├── aws-secrets-manager.md
-    ├── ecr-setup.md
-    ├── eks-setup.md
-    ├── ingress-setup.md
-    ├── argocd-setup.md
-    ├── deployment-flow.md
-    └── university-demo-checklist.md
+    ├── local-architecture.md
+    └── aws-architecture.md
 ```
 
 ## Primary Guides
 
-If you only need the two main runbooks, start here:
+The docs are intentionally limited to four files:
 
-- local Kubernetes with K3D: [docs/local-k3d-setup.md](./docs/local-k3d-setup.md)
-- AWS deployment with EKS, ECR, Argo CD, and Secrets Manager: [docs/aws-setup.md](./docs/aws-setup.md)
+- local setup and testing: [docs/local-k3d-setup.md](./docs/local-k3d-setup.md)
+- how local deployment works: [docs/local-architecture.md](./docs/local-architecture.md)
+- AWS setup and deployment: [docs/aws-setup.md](./docs/aws-setup.md)
+- how AWS deployment works: [docs/aws-architecture.md](./docs/aws-architecture.md)
 
 ## Chart Usage
 
@@ -76,7 +72,7 @@ helm template emt-app charts/emt-app -f charts/emt-app/values-prod.yaml
 
 ## GitOps Flow
 
-1. `EMT_2025` builds backend/frontend Docker images
+1. `EMT_2025` builds backend/frontend/database seeder Docker images
 2. GitHub Actions pushes images to Amazon ECR
 3. GitHub Actions updates `charts/emt-app/values-prod.yaml`
 4. Argo CD detects the Git change in this repository

@@ -75,6 +75,14 @@ backend:
     limits:
       cpu: 750m
       memory: 768Mi
+databaseSeeder:
+  enabled: true
+  seedVersion: v1
+  truncateBeforeLoad: false
+  image:
+    repository: 004619892251.dkr.ecr.eu-central-1.amazonaws.com/emt-db-seeder
+    tag: 12d453405301059e2f71a44448ba2e9a50309180
+    pullPolicy: IfNotPresent
 ingress:
   enabled: true
   className: alb

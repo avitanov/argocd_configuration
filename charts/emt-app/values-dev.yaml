@@ -1,5 +1,5 @@
 namespace:
-  create: true
+  create: false
   name: emt-dev
 
 secrets:
@@ -37,6 +37,31 @@ backend:
     limits:
       cpu: 250m
       memory: 320Mi
+  readinessProbe:
+    httpGet:
+      path: /api/products/frizideri
+      port: http
+    initialDelaySeconds: 240
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 12
+  livenessProbe:
+    httpGet:
+      path: /api/products/frizideri
+      port: http
+    initialDelaySeconds: 360
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 6
+
+databaseSeeder:
+  enabled: true
+  seedVersion: v1
+  truncateBeforeLoad: false
+  image:
+    repository: emt-db-seeder
+    tag: dev
+    pullPolicy: IfNotPresent
 
 ingress:
   enabled: true
@@ -71,10 +96,24 @@ postgresql-ha:
         memory: 384Mi
   pgpool:
     replicaCount: 1
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      timeoutSeconds: 10
+      failureThreshold: 12
+      successThreshold: 1
+    livenessProbe:
+      enabled: true
+      initialDelaySeconds: 180
+      periodSeconds: 20
+      timeoutSeconds: 10
+      failureThreshold: 6
+      successThreshold: 1
     resources:
       requests:
         cpu: 50m
-        memory: 96Mi
-      limits:
-        cpu: 150m
         memory: 192Mi
+      limits:
+        cpu: 250m
+        memory: 512Mi

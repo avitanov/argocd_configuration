@@ -1,0 +1,59 @@
+{{- if .Values.databaseSeeder.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "emt-app.dbSeederJobName" . }}
+  namespace: {{ include "emt-app.namespace" . }}
+  labels:
+    {{- include "emt-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: db-seeder
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  backoffLimit: {{ .Values.databaseSeeder.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.databaseSeeder.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "emt-app.labels" . | nindent 8 }}
+        app.kubernetes.io/component: db-seeder
+    spec:
+      restartPolicy: Never
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.databaseSeeder.podSecurityContext | nindent 8 }}
+      containers:
+        - name: db-seeder
+          image: "{{ .Values.databaseSeeder.image.repository }}:{{ .Values.databaseSeeder.image.tag }}"
+          imagePullPolicy: {{ .Values.databaseSeeder.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.databaseSeeder.securityContext | nindent 12 }}
+          env:
+            - name: POSTGRES_HOST
+              value: {{ .Values.databaseSeeder.database.host | quote }}
+            - name: POSTGRES_PORT
+              value: {{ .Values.databaseSeeder.database.port | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.databaseSeeder.database.name | quote }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "emt-app.secretName" . }}
+                  key: {{ .Values.databaseSeeder.database.userSecretKey }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "emt-app.secretName" . }}
+                  key: {{ .Values.databaseSeeder.database.passwordSecretKey }}
+            - name: PGSSLMODE
+              value: {{ .Values.databaseSeeder.database.sslMode | quote }}
+            - name: SEED_VERSION
+              value: {{ .Values.databaseSeeder.seedVersion | quote }}
+            - name: SEED_TRUNCATE_BEFORE_LOAD
+              value: {{ .Values.databaseSeeder.truncateBeforeLoad | quote }}
+          resources:
+            {{- toYaml .Values.databaseSeeder.resources | nindent 12 }}
+{{- end }}
