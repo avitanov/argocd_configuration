@@ -32,23 +32,23 @@ secrets:
       - secretKey: password
         remoteRef:
           key: emt/prod/app
-          property: password
+          property: SPRING_DATASOURCE_PASSWORD
       - secretKey: postgres-password
         remoteRef:
           key: emt/prod/app
-          property: postgres-password
+          property: POSTGRES_PASSWORD
       - secretKey: repmgr-password
         remoteRef:
           key: emt/prod/app
-          property: repmgr-password
+          property: REPMGR_PASSWORD
       - secretKey: admin-password
         remoteRef:
           key: emt/prod/app
-          property: admin-password
+          property: PGPOOL_ADMIN_PASSWORD
       - secretKey: sr-check-password
         remoteRef:
           key: emt/prod/app
-          property: sr-check-password
+          property: SR_CHECK_PASSWORD
 frontend:
   replicaCount: 2
   image:
